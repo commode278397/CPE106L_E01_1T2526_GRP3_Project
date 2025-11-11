@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SkillBridge Portal</title>
+    <style>
+      :root {
+        font-family: "Segoe UI", Tahoma, sans-serif;
+        color: #1b1f23;
+        background-color: #f4f6fb;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f4f6fb, #e3ebff);
+      }
+
+      header {
+        background: #1c4ed8;
+        color: #fff;
+        padding: 1.5rem 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      header h1 {
+        margin: 0;
+        font-size: 1.8rem;
+      }
+
+      header p {
+        margin: 0;
+        opacity: 0.85;
+      }
+
+      main {
+        max-width: 1000px;
+        margin: 2rem auto;
+        padding: 0 1rem 3rem;
+      }
+
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+
+      nav button {
+        border: none;
+        border-radius: 6px;
+        padding: 0.5rem 0.9rem;
+        background: #fff;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+        cursor: pointer;
+        transition: background 0.2s ease, transform 0.2s ease;
+      }
+
+      nav button.active {
+        background: #1c4ed8;
+        color: #fff;
+      }
+
+      nav button:hover:not(.active) {
+        background: #eef2ff;
+      }
+
+      section.panel {
+        display: none;
+        background: #fff;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 15px 30px rgba(15, 23, 42, 0.08);
+        animation: fadeIn 0.2s ease;
+      }
+
+      section.panel.active {
+        display: block;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      form {
+        display: grid;
+        gap: 0.75rem;
+        margin-top: 0.75rem;
+      }
+
+      label {
+        font-weight: 600;
+      }
+
+      input,
+      textarea {
+        padding: 0.6rem 0.7rem;
+        border-radius: 6px;
+        border: 1px solid #c7d2fe;
+        font-size: 1rem;
+      }
+
+      textarea {
+        resize: vertical;
+      }
+
+      .actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+
+      .actions button {
+        border: none;
+        border-radius: 6px;
+        padding: 0.6rem 1.2rem;
+        background: #1c4ed8;
+        color: #fff;
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      .message {
+        min-height: 1.2rem;
+        font-weight: 600;
+      }
+
+      .message.error {
+        color: #b91c1c;
+      }
+
+      .message.success {
+        color: #047857;
+      }
+
+      ul.tips {
+        padding-left: 1.2rem;
+        line-height: 1.6;
+      }
+
+      @media (max-width: 600px) {
+        header,
+        main {
+          padding-left: 1rem;
+          padding-right: 1rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>SkillBridge Portal</h1>
+      <p>Connect volunteers and requests in a single browser-based dashboard.</p>
+    </header>
+    <main>
+      <nav id="nav"></nav>
+
+      <section id="overview" class="panel active">
+        <h2>Overview</h2>
+        <p>
+          SkillBridge pairs volunteers with community requests. Use the
+          navigation buttons to register helpers, declare skills, post new
+          requests, or manage active matches—all powered by the FastAPI backend.
+        </p>
+        <h3>Tips</h3>
+        <ul class="tips">
+          <li>Keep the API running locally on <code>127.0.0.1:8000</code>.</li>
+          <li>Note the volunteer ID after registration for future actions.</li>
+          <li>Only open requests can be matched; cancelling locks them.</li>
+        </ul>
+      </section>
+
+      <section id="register" class="panel">
+        <h2>Register Volunteer</h2>
+        <form id="register-form">
+          <label>
+            Name
+            <input type="text" name="name" required />
+          </label>
+          <label>
+            Email
+            <input type="email" name="email" required />
+          </label>
+          <label>
+            Skills (comma separated)
+            <input type="text" name="skills" placeholder="e.g. tutoring, carpentry" />
+          </label>
+          <div class="actions">
+            <button type="submit">Register</button>
+          </div>
+        </form>
+        <div id="register-message" class="message"></div>
+      </section>
+
+      <section id="offer" class="panel">
+        <h2>Offer Skill</h2>
+        <form id="offer-form">
+          <label>
+            Volunteer ID
+            <input type="number" name="volunteer_id" min="1" required />
+          </label>
+          <label>
+            Skill
+            <input type="text" name="skill" required />
+          </label>
+          <div class="actions">
+            <button type="submit">Offer Skill</button>
+          </div>
+        </form>
+        <div id="offer-message" class="message"></div>
+      </section>
+
+      <section id="request" class="panel">
+        <h2>Create Request</h2>
+        <form id="request-form">
+          <label>
+            Title
+            <input type="text" name="title" required />
+          </label>
+          <label>
+            Description
+            <textarea name="description" rows="3"></textarea>
+          </label>
+          <label>
+            Required Skills
+            <input type="text" name="required_skills" />
+          </label>
+          <label>
+            Requester Name
+            <input type="text" name="requester_name" required />
+          </label>
+          <label>
+            Location
+            <input type="text" name="location" required />
+          </label>
+          <div class="actions">
+            <button type="submit">Submit Request</button>
+          </div>
+        </form>
+        <div id="request-message" class="message"></div>
+      </section>
+
+      <section id="accept" class="panel">
+        <h2>Accept Request</h2>
+        <form id="accept-form">
+          <label>
+            Request ID
+            <input type="number" name="request_id" min="1" required />
+          </label>
+          <label>
+            Volunteer ID
+            <input type="number" name="volunteer_id" min="1" required />
+          </label>
+          <div class="actions">
+            <button type="submit">Accept Request</button>
+          </div>
+        </form>
+        <div id="accept-message" class="message"></div>
+      </section>
+
+      <section id="cancel" class="panel">
+        <h2>Cancel Request</h2>
+        <form id="cancel-form">
+          <label>
+            Request ID
+            <input type="number" name="request_id" min="1" required />
+          </label>
+          <div class="actions">
+            <button type="submit">Cancel Request</button>
+          </div>
+        </form>
+        <div id="cancel-message" class="message"></div>
+      </section>
+    </main>
+
+    <script>
+      const API_BASE = "http://127.0.0.1:8000";
+      const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      const nav = document.getElementById("nav");
+      const panels = {
+        overview: document.getElementById("overview"),
+        register: document.getElementById("register"),
+        offer: document.getElementById("offer"),
+        request: document.getElementById("request"),
+        accept: document.getElementById("accept"),
+        cancel: document.getElementById("cancel"),
+      };
+
+      const sectionOrder = ["overview", "register", "offer", "request", "accept", "cancel"];
+
+      sectionOrder.forEach((section, index) => {
+        const btn = document.createElement("button");
+        btn.textContent = section.charAt(0).toUpperCase() + section.slice(1);
+        btn.dataset.target = section;
+        if (index === 0) btn.classList.add("active");
+        btn.addEventListener("click", () => switchPanel(section, btn));
+        nav.appendChild(btn);
+      });
+
+      function switchPanel(target, button) {
+        Object.entries(panels).forEach(([id, panel]) => {
+          panel.classList.toggle("active", id === target);
+        });
+        nav.querySelectorAll("button").forEach((btn) =>
+          btn.classList.toggle("active", btn === button)
+        );
+      }
+
+      function setMessage(el, text, isError = false) {
+        el.textContent = text || "";
+        el.classList.toggle("error", Boolean(text) && isError);
+        el.classList.toggle("success", Boolean(text) && !isError);
+      }
+
+      async function postJson(path, payload) {
+        const response = await fetch(`${API_BASE}${path}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const raw = await response.text();
+        let data = null;
+        if (raw) {
+          try {
+            data = JSON.parse(raw);
+          } catch (err) {
+            data = { detail: raw };
+          }
+        }
+        if (!response.ok) {
+          const detail =
+            (data && (data.detail || data.message)) || response.statusText || "Request failed";
+          throw new Error(detail);
+        }
+        return data || {};
+      }
+
+      const registerForm = document.getElementById("register-form");
+      const registerMessage = document.getElementById("register-message");
+      registerForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const data = new FormData(registerForm);
+        const payload = {
+          name: (data.get("name") || "").trim(),
+          email: (data.get("email") || "").trim(),
+          skills: (data.get("skills") || "").trim() || null,
+        };
+        if (!payload.name) {
+          return setMessage(registerMessage, "Name is required.", true);
+        }
+        if (!payload.email || !EMAIL_RE.test(payload.email)) {
+          return setMessage(registerMessage, "Enter a valid email.", true);
+        }
+        try {
+          const result = await postJson("/users", payload);
+          registerForm.reset();
+          setMessage(
+            registerMessage,
+            `Volunteer created: ${result.name} (ID ${result.id})`,
+            false
+          );
+        } catch (err) {
+          setMessage(registerMessage, err.message, true);
+        }
+      });
+
+      const offerForm = document.getElementById("offer-form");
+      const offerMessage = document.getElementById("offer-message");
+      offerForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const data = new FormData(offerForm);
+        const userId = Number(data.get("volunteer_id"));
+        const skill = (data.get("skill") || "").trim();
+        if (!Number.isInteger(userId) || userId <= 0) {
+          return setMessage(offerMessage, "Volunteer ID must be a positive number.", true);
+        }
+        if (!skill) {
+          return setMessage(offerMessage, "Skill cannot be empty.", true);
+        }
+        try {
+          const result = await postJson(`/volunteers/${userId}/skills`, { skill });
+          offerForm.reset();
+          setMessage(
+            offerMessage,
+            `Skill "${result.skill}" offered by volunteer ${result.user_id}.`,
+            false
+          );
+        } catch (err) {
+          setMessage(offerMessage, err.message, true);
+        }
+      });
+
+      const requestForm = document.getElementById("request-form");
+      const requestMessage = document.getElementById("request-message");
+      requestForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const data = new FormData(requestForm);
+        const payload = {
+          title: (data.get("title") || "").trim(),
+          description: (data.get("description") || "").trim() || null,
+          required_skills: (data.get("required_skills") || "").trim() || null,
+          requester_name: (data.get("requester_name") || "").trim(),
+          location: (data.get("location") || "").trim(),
+        };
+        if (!payload.title) {
+          return setMessage(requestMessage, "Title is required.", true);
+        }
+        if (!payload.requester_name) {
+          return setMessage(requestMessage, "Requester name is required.", true);
+        }
+        if (!payload.location) {
+          return setMessage(requestMessage, "Location is required.", true);
+        }
+        try {
+          const result = await postJson("/requests", payload);
+          requestForm.reset();
+          setMessage(
+            requestMessage,
+            `Request #${result.id} created with status ${result.status}.`,
+            false
+          );
+        } catch (err) {
+          setMessage(requestMessage, err.message, true);
+        }
+      });
+
+      const acceptForm = document.getElementById("accept-form");
+      const acceptMessage = document.getElementById("accept-message");
+      acceptForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const data = new FormData(acceptForm);
+        const requestId = Number(data.get("request_id"));
+        const volunteerId = Number(data.get("volunteer_id"));
+        if (!Number.isInteger(requestId) || requestId <= 0) {
+          return setMessage(acceptMessage, "Request ID must be positive.", true);
+        }
+        if (!Number.isInteger(volunteerId) || volunteerId <= 0) {
+          return setMessage(acceptMessage, "Volunteer ID must be positive.", true);
+        }
+        try {
+          const result = await postJson(`/requests/${requestId}/accept`, {
+            volunteer_id: volunteerId,
+          });
+          acceptForm.reset();
+          setMessage(
+            acceptMessage,
+            `Volunteer ${result.volunteer_id} accepted request ${result.request_id} (status ${result.status}).`,
+            false
+          );
+        } catch (err) {
+          setMessage(acceptMessage, err.message, true);
+        }
+      });
+
+      const cancelForm = document.getElementById("cancel-form");
+      const cancelMessage = document.getElementById("cancel-message");
+      cancelForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const data = new FormData(cancelForm);
+        const requestId = Number(data.get("request_id"));
+        if (!Number.isInteger(requestId) || requestId <= 0) {
+          return setMessage(cancelMessage, "Request ID must be positive.", true);
+        }
+        try {
+          const result = await postJson(`/requests/${requestId}/cancel`, {});
+          cancelForm.reset();
+          setMessage(
+            cancelMessage,
+            `Request ${result.id} cancelled (status ${result.status}).`,
+            false
+          );
+        } catch (err) {
+          setMessage(cancelMessage, err.message, true);
+        }
+      });
+    </script>
+  </body>
+</html>
